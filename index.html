@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countries I've Visited</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🌍</text></svg>">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .progress-ring-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .progress-percentage {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4ade80;
+            display: block;
+        }
+
+        .progress-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stats-details {
+            text-align: left;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.25rem;
+        }
+
+        .stats-subtitle {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+            background: #e5e7eb;
+        }
+
+        .leaflet-container {
+            background: #e5e7eb;
+        }
+
+        .leaflet-tile-pane img {
+            image-rendering: pixelated;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        /* Enhance visited country styling */
+        .visited-country {
+            filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3));
+        }
+
+        .country-label {
+            font-weight: bold;
+            text-shadow: 1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .regions-title {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .region-item {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .region-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .region-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .region-icon {
+            font-size: 1.5rem;
+        }
+
+        .region-countries {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #d1d5db;
+        }
+
+        .region-progress {
+            background: #e5e7eb;
+            border-radius: 6px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .region-progress-bar {
+            height: 100%;
+            transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            width: 0;
+        }
+
+        .country-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+
+        .country-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: white;
+            border: 1.5px solid #d1d5db;
+            border-radius: 16px;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            cursor: default;
+            position: relative;
+        }
+
+        .country-tag:hover {
+            transform: scale(1.06);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .country-tag.visited {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .country-tag.visited:hover {
+            background: #a7f3d0;
+            border-color: #059669;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+        }
+
+        .country-tag:not(.visited) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #6b7280;
+        }
+
+        .country-tag:not(.visited):hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .country-tag-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .country-tag[data-year]::after {
+            content: attr(data-year);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            margin-bottom: 0.35rem;
+        }
+
+        .country-tag[data-year]:hover::after {
+            opacity: 1;
+        }
+
+        .unvisited-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .unvisited-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.8rem;
+        }
+
+        .region-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .region-progress {
+            background: #e5e7eb;
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .region-progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .region-stats {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .region-item.completed .region-name::after {
+            content: ' ✓';
+            color: #10b981;
+        }
+
+        .region-item.completed .region-progress-bar {
+            background: #10b981;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: none;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .map-container {
+                min-height: 400px;
+            }
+
+            #map {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Countries I've Visited</h1>
+
+        <div class="stats">
+            <div class="stats-container">
+                <div class="progress-ring-container">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="8"/>
+                        <circle id="progressRing" cx="60" cy="60" r="54" fill="none" stroke="#4ade80" stroke-width="8" stroke-dasharray="339.29" stroke-dashoffset="339.29" class="progress-ring"/>
+                    </svg>
+                    <div class="progress-text">
+                        <span class="progress-percentage" id="progressPercentage">0%</span>
+                        <span class="progress-label">Complete</span>
+                    </div>
+                </div>
+                <div class="stats-details">
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-number" id="visitedCount">0</span>
+                            <span class="stat-label">Visited</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="notVisitedCount">0</span>
+                            <span class="stat-label">To Visit</span>
+                        </div>
+                    </div>
+                    <div class="stats-subtitle" id="motivationalText">Keep exploring!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+
+            <div class="sidebar">
+                <div class="regions-title">Regions</div>
+                <div id="regionsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+    
+    <script>
+        // Country code to name mapping
+        const countryNames = {
+            'IS': 'Iceland', 'NO': 'Norway', 'SE': 'Sweden', 'FI': 'Finland',
+            'DK': 'Denmark', 'GB': 'United Kingdom', 'IE': 'Ireland', 'NL': 'Netherlands',
+            'BE': 'Belgium', 'LU': 'Luxembourg', 'DE': 'Germany', 'PL': 'Poland',
+            'CZ': 'Czech Republic', 'SK': 'Slovakia', 'AT': 'Austria', 'CH': 'Switzerland',
+            'FR': 'France', 'ES': 'Spain', 'PT': 'Portugal', 'IT': 'Italy',
+            'SI': 'Slovenia', 'HR': 'Croatia', 'BA': 'Bosnia and Herzegovina', 'RS': 'Serbia',
+            'ME': 'Montenegro', 'AL': 'Albania', 'MK': 'North Macedonia', 'BG': 'Bulgaria',
+            'GR': 'Greece', 'CY': 'Cyprus', 'RO': 'Romania', 'MD': 'Moldova',
+            'UA': 'Ukraine', 'BY': 'Belarus', 'LT': 'Lithuania', 'LV': 'Latvia', 'EE': 'Estonia',
+            'TR': 'Turkey', 'HU': 'Hungary', 'AD': 'Andorra', 'MC': 'Monaco', 'LI': 'Liechtenstein',
+            'SM': 'San Marino', 'VA': 'Vatican City', 'MT': 'Malta'
+        };
+
+        // Define European regions with their countries, colors, and emojis
+        const regions = {
+            'Nordics': {
+                countries: ['IS', 'NO', 'SE', 'FI', 'DK'],
+                color: '#3b82f6',
+                emoji: '❄️'
+            },
+            'British Isles': {
+                countries: ['GB', 'IE'],
+                color: '#f59e0b',
+                emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿'
+            },
+            'Benelux': {
+                countries: ['NL', 'BE', 'LU'],
+                color: '#ec4899',
+                emoji: '🚲'
+            },
+            'Central Europe': {
+                countries: ['DE', 'PL', 'CZ', 'SK', 'AT', 'CH', 'HU'],
+                color: '#8b5cf6',
+                emoji: '🏰'
+            },
+            'Western Europe': {
+                countries: ['FR', 'ES', 'PT'],
+                color: '#14b8a6',
+                emoji: '🍷'
+            },
+            'Southern Europe': {
+                countries: ['IT', 'SI', 'MT', 'GR', 'CY', 'TR'],
+                color: '#f97316',
+                emoji: '☀️'
+            },
+            'Balkans': {
+                countries: ['HR', 'BA', 'RS', 'ME', 'AL', 'MK', 'BG'],
+                color: '#d946ef',
+                emoji: '🏔️'
+            },
+            'Eastern Europe': {
+                countries: ['UA', 'BY', 'RO', 'MD'],
+                color: '#06b6d4',
+                emoji: '🌾'
+            },
+            'Baltics': {
+                countries: ['LT', 'LV', 'EE'],
+                color: '#10b981',
+                emoji: '🌲'
+            },
+            'Microstates': {
+                countries: ['AD', 'MC', 'LI', 'SM', 'VA'],
+                color: '#6366f1',
+                emoji: '✨'
+            }
+        };
+
+        // Create a region map for quick lookups
+        const regionMap = {};
+        Object.entries(regions).forEach(([regionName, data]) => {
+            data.countries.forEach(country => {
+                regionMap[country] = { name: regionName, color: data.color };
+            });
+        });
+
+        // European country codes for filtering
+        const europeanCountries = new Set(
+            Object.values(regions).flatMap(r => r.countries)
+        );
+
+        // Initialize map centered on Europe
+        const map = L.map('map').setView([54.5260, 15.2551], 3);
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        let visitedCountries = [];
+        let geoJsonLayer = null;
+
+        // Helper function to lighten a color
+        function lightenColor(color, opacity) {
+            // Convert hex to RGB
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            // Mix with white for lightened effect
+            const lightR = Math.round(r + (255 - r) * (1 - opacity));
+            const lightG = Math.round(g + (255 - g) * (1 - opacity));
+            const lightB = Math.round(b + (255 - b) * (1 - opacity));
+            
+            return `rgb(${lightR}, ${lightG}, ${lightB})`;
+        }
+
+        // Get centroid of a feature for label placement
+        function getFeatureCentroid(geometry) {
+            if (geometry.type === 'Polygon') {
+                const coords = geometry.coordinates[0];
+                let sumLat = 0, sumLng = 0;
+                coords.forEach(coord => {
+                    sumLng += coord[0];
+                    sumLat += coord[1];
+                });
+                return [sumLat / coords.length, sumLng / coords.length];
+            } else if (geometry.type === 'MultiPolygon') {
+                // Find the largest polygon (mainland)
+                let largestPolygon = geometry.coordinates[0];
+                let largestArea = 0;
+                
+                geometry.coordinates.forEach(polygon => {
+                    const area = polygon[0].length;
+                    if (area > largestArea) {
+                        largestArea = area;
+                        largestPolygon = polygon;
+                    }
+                });
+                
+                let sumLat = 0, sumLng = 0;
+                largestPolygon[0].forEach(coord => {
+                    sumLng += coord[0];
+                    sumLat += coord[1];
+                });
+                return [sumLat / largestPolygon[0].length, sumLng / largestPolygon[0].length];
+            }
+            return [0, 0];
+        }
+
+        // Load visited countries from JSON
+        async function loadVisited() {
+            try {
+                const response = await fetch('visited.json');
+                if (response.ok) {
+                    visitedCountries = await response.json();
+                }
+            } catch (error) {
+                console.log('No visited.json found, starting fresh.');
+                visitedCountries = [];
+            }
+            loadMap();
+        }
+
+        // Country code mapping from world-atlas data (UN country codes to ISO 3166-1 alpha-2)
+        const countryNameMap = {
+            '352': 'IS',  // Iceland
+            '578': 'NO',  // Norway
+            '752': 'SE',  // Sweden
+            '246': 'FI',  // Finland
+            '208': 'DK',  // Denmark
+            '826': 'GB',  // United Kingdom
+            '372': 'IE',  // Ireland
+            '528': 'NL',  // Netherlands
+            '056': 'BE',  // Belgium
+            '442': 'LU',  // Luxembourg
+            '276': 'DE',  // Germany
+            '616': 'PL',  // Poland
+            '203': 'CZ',  // Czech Republic
+            '703': 'SK',  // Slovakia
+            '040': 'AT',  // Austria
+            '756': 'CH',  // Switzerland
+            '250': 'FR',  // France
+            '724': 'ES',  // Spain
+            '620': 'PT',  // Portugal
+            '380': 'IT',  // Italy
+            '300': 'GR',  // Greece
+            '191': 'HR',  // Croatia
+            '070': 'BA',  // Bosnia and Herzegovina
+            '688': 'RS',  // Serbia
+            '499': 'ME',  // Montenegro
+            '008': 'AL',  // Albania
+            '807': 'MK',  // North Macedonia
+            '100': 'BG',  // Bulgaria
+            '804': 'UA',  // Ukraine
+            '112': 'BY',  // Belarus
+            '642': 'RO',  // Romania
+            '498': 'MD',  // Moldova
+            '428': 'LV',  // Latvia
+            '440': 'LT',  // Lithuania
+            '233': 'EE',  // Estonia
+            '643': 'RU',  // Russia
+            '792': 'TR',  // Turkey
+            '348': 'HU',  // Hungary
+            '020': 'AD',  // Andorra
+            '492': 'MC',  // Monaco
+            '438': 'LI',  // Liechtenstein
+            '674': 'SM',  // San Marino
+            '336': 'VA',  // Vatican City
+            '470': 'MT',  // Malta
+            '316': 'MT',  // Malta (alternative code)
+            '196': 'CY',  // Cyprus
+            '705': 'SI'   // Slovenia
+        };
+
+        // Load GeoJSON and create map
+        async function loadMap() {
+            try {
+                const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+                const world = await response.json();
+                
+                // Convert TopoJSON to GeoJSON
+                const countriesGeoJson = topojson.feature(world, world.objects.countries);
+
+                // Create GeoJSON feature collection with country codes
+                const europeanGeoJson = {
+                    type: 'FeatureCollection',
+                    features: countriesGeoJson.features
+                        .map(feature => {
+                            if (!feature.id) {
+                                return null;
+                            }
+                            const id = feature.id.toString();
+                            const countryCode = countryNameMap[id];
+                            if (countryCode && europeanCountries.has(countryCode)) {
+                                return {
+                                    ...feature,
+                                    properties: {
+                                        ...feature.properties,
+                                        countryCode: countryCode
+                                    }
+                                };
+                            }
+                            return null;
+                        })
+                        .filter(f => f !== null)
+                        .concat([
+                            // Add Malta manually as a point feature since it's not in the 110m dataset
+                            {
+                                type: 'Feature',
+                                id: 'malta-manual',
+                                properties: { countryCode: 'MT' },
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: [14.375, 35.937]
+                                }
+                            }
+                        ])
+                };
+
+                console.log(`Loaded ${europeanGeoJson.features.length} European countries`);
+                console.log('Country codes loaded:', europeanGeoJson.features.map(f => f.properties.countryCode).sort().join(', '));
+
+                if (geoJsonLayer) {
+                    map.removeLayer(geoJsonLayer);
+                }
+
+                geoJsonLayer = L.geoJSON(europeanGeoJson, {
+                    style: (feature) => {
+                        // Skip styling for Point features (Malta marker)
+                        if (feature.geometry.type === 'Point') {
+                            return {};
+                        }
+                        
+                        const code = feature.properties.countryCode;
+                        const isVisited = visitedCountries.includes(code);
+                        const regionData = regionMap[code];
+                        
+                        // Get the region color, or use a default
+                        let color = regionData ? regionData.color : '#9ca3af';
+                        let fillColor;
+                        let weight;
+                        let opacity;
+                        
+                        if (isVisited) {
+                            // Visited: darker, more saturated, with subtle shadow
+                            fillColor = color;
+                            weight = 1.5;
+                            opacity = 1;
+                        } else {
+                            // Unvisited: very light grey, desaturated
+                            fillColor = '#f0f0f0';
+                            weight = 0.5;
+                            opacity = 0.6;
+                        }
+                        
+                        return {
+                            fillColor: fillColor,
+                            weight: weight,
+                            opacity: opacity,
+                            color: isVisited ? color : '#d0d0d0',
+                            fillOpacity: isVisited ? 0.85 : 0.3,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        };
+                    },
+                    pointToLayer: (feature, latlng) => {
+                        // Handle Malta point marker
+                        const code = feature.properties.countryCode;
+                        const isVisited = visitedCountries.includes(code);
+                        const regionData = regionMap[code];
+                        let color = regionData ? regionData.color : '#9ca3af';
+                        
+                        return L.circleMarker(latlng, {
+                            radius: isVisited ? 8 : 6,
+                            fillColor: isVisited ? color : '#f0f0f0',
+                            color: isVisited ? color : '#d0d0d0',
+                            weight: isVisited ? 2 : 1,
+                            opacity: isVisited ? 1 : 0.6,
+                            fillOpacity: isVisited ? 0.85 : 0.3
+                        });
+                    },
+                    onEachFeature: (feature, layer) => {
+                        const code = feature.properties.countryCode;
+                        if (!code) {
+                            console.log('Feature with no country code:', feature.id);
+                            return;
+                        }
+                        const name = countryNames[code] || code;
+                        layer.bindPopup(`<strong>${name}</strong> (${code})`);
+                        
+                        const isVisited = visitedCountries.includes(code);
+                        
+                        layer.on('mouseover', function() {
+                            if (feature.geometry.type === 'Point') {
+                                this.setStyle({
+                                    radius: isVisited ? 10 : 8,
+                                    weight: isVisited ? 2.5 : 1.5,
+                                    fillOpacity: isVisited ? 0.95 : 0.5
+                                });
+                            } else {
+                                this.setStyle({
+                                    weight: isVisited ? 2.5 : 1,
+                                    fillOpacity: isVisited ? 0.95 : 0.5,
+                                    color: isVisited ? regionMap[code]?.color : '#b0b0b0'
+                                });
+                            }
+                            this.bringToFront();
+                        });
+                        
+                        layer.on('mouseout', function() {
+                            if (feature.geometry.type === 'Point') {
+                                this.setStyle({
+                                    radius: isVisited ? 8 : 6,
+                                    weight: isVisited ? 2 : 1,
+                                    fillOpacity: isVisited ? 0.85 : 0.3
+                                });
+                            } else {
+                                this.setStyle({
+                                    weight: isVisited ? 1.5 : 0.5,
+                                    fillOpacity: isVisited ? 0.85 : 0.3,
+                                    color: isVisited ? regionMap[code]?.color : '#d0d0d0'
+                                });
+                            }
+                        });
+                        
+                        // Skip label for Point features
+                        if (feature.geometry.type === 'Point') {
+                            return;
+                        }
+                        
+                        // Add country code label
+                        const centroid = getFeatureCentroid(feature.geometry);
+                        L.marker(centroid, {
+                            icon: L.divIcon({
+                                className: 'country-label',
+                                html: `<div style="font-size: 11px; font-weight: bold; color: ${isVisited ? '#1f2937' : '#999'}; text-shadow: 1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white; pointer-events: none;">${code}</div>`,
+                                iconSize: [30, 20]
+                            })
+                        }).addTo(map);
+                    }
+                }).addTo(map);
+
+                updateStats();
+                renderRegions();
+            } catch (error) {
+                console.error('Error loading map:', error);
+            }
+        }
+
+        function updateStats() {
+            const allCountries = new Set();
+            Object.values(regions).forEach(regionData => {
+                regionData.countries.forEach(c => allCountries.add(c));
+            });
+            const totalCountries = allCountries.size;
+            const visitedCount = visitedCountries.length;
+            const notVisitedCount = totalCountries - visitedCount;
+            const percentage = Math.round((visitedCount / totalCountries) * 100);
+            
+            document.getElementById('visitedCount').textContent = visitedCount;
+            document.getElementById('notVisitedCount').textContent = notVisitedCount;
+            document.getElementById('progressPercentage').textContent = percentage + '%';
+            
+            // Update progress ring
+            const circumference = 2 * Math.PI * 54; // radius = 54
+            const offset = circumference - (percentage / 100) * circumference;
+            document.getElementById('progressRing').style.strokeDashoffset = offset;
+            
+            // Update motivational text
+            let motivation = 'Keep exploring!';
+            if (percentage === 0) {
+                motivation = 'Start your European adventure!';
+            } else if (percentage < 25) {
+                motivation = 'Just getting started!';
+            } else if (percentage < 50) {
+                motivation = 'Great progress!';
+            } else if (percentage < 75) {
+                motivation = 'Halfway there!';
+            } else if (percentage < 100) {
+                motivation = 'Almost there!';
+            } else {
+                motivation = '🎉 Europe conquered!';
+            }
+            document.getElementById('motivationalText').textContent = motivation;
+        }
+
+        function renderRegions() {
+            const container = document.getElementById('regionsContainer');
+            container.innerHTML = '';
+
+            // Collect all unvisited countries
+            const allCountries = new Set();
+            Object.values(regions).forEach(regionData => {
+                regionData.countries.forEach(c => allCountries.add(c));
+            });
+            const globalUnvisitedCountries = Array.from(allCountries).filter(c => !visitedCountries.includes(c));
+
+            Object.entries(regions).forEach(([regionName, regionData]) => {
+                const countries = regionData.countries;
+                const visited = countries.filter(c => visitedCountries.includes(c));
+                const unvisited = countries.filter(c => !visitedCountries.includes(c));
+                const total = countries.length;
+                const percentage = (visited.length / total) * 100;
+                const isCompleted = visited.length === total;
+
+                const regionEl = document.createElement('div');
+                regionEl.className = `region-item ${isCompleted ? 'completed' : ''}`;
+                regionEl.style.borderColor = regionData.color;
+                
+                const visitedTagsHtml = visited
+                    .map(code => `<span class="country-tag visited">${countryNames[code] || code}</span>`)
+                    .join('');
+                
+                const unvisitedTagsHtml = unvisited
+                    .map(code => `<span class="country-tag">${countryNames[code] || code}</span>`)
+                    .join('');
+
+                const allTagsHtml = visitedTagsHtml + unvisitedTagsHtml;
+
+                regionEl.innerHTML = `
+                    <div class="region-header">
+                        <span class="region-icon">${regionData.emoji}</span>
+                        <div class="region-name" style="color: ${regionData.color}; flex: 1;">${regionName}</div>
+                    </div>
+                    <div class="region-progress">
+                        <div class="region-progress-bar" style="background: ${regionData.color}; width: 0;"></div>
+                    </div>
+                    ${allTagsHtml ? `<div style="margin-top: 0.5rem;"><div class="country-list" style="opacity: 1;">${allTagsHtml}</div></div>` : ''}
+                `;
+
+                container.appendChild(regionEl);
+                
+                // Trigger animation after adding to DOM
+                setTimeout(() => {
+                    const progressBar = regionEl.querySelector('.region-progress-bar');
+                    progressBar.style.width = percentage + '%';
+                }, 10);
+            });
+        }
+
+        // Initialize
+        loadVisited();
+    </script>
+</body>
+</html>
