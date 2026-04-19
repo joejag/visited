@@ -883,12 +883,19 @@
         }
 
         function updateStats() {
+            // Countries to exclude from top-level stats (still shown in regions)
+            const excludedFromStats = new Set(['SM', 'VA']);
+            
             const allCountries = new Set();
             Object.values(regions).forEach(regionData => {
-                regionData.countries.forEach(c => allCountries.add(c));
+                regionData.countries.forEach(c => {
+                    if (!excludedFromStats.has(c)) {
+                        allCountries.add(c);
+                    }
+                });
             });
             const totalCountries = allCountries.size;
-            const visitedCount = visitedCountries.length;
+            const visitedCount = visitedCountries.filter(c => !excludedFromStats.has(c)).length;
             const notVisitedCount = totalCountries - visitedCount;
             const percentage = Math.round((visitedCount / totalCountries) * 100);
             
