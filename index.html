@@ -884,7 +884,7 @@
 
         function updateStats() {
             // Countries to exclude from top-level stats (still shown in regions)
-            const excludedFromStats = new Set(['SM', 'VA']);
+            const excludedFromStats = new Set(['SM', 'VA', 'MC', 'AD', 'LI']);
             
             const allCountries = new Set();
             Object.values(regions).forEach(regionData => {
