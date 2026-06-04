@@ -43,96 +43,67 @@
         .stats {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            text-align: center;
-            padding: 2.5rem;
+            padding: 1.1rem 1.25rem;
             border-radius: 12px;
-            margin-bottom: 2.5rem;
+            margin-bottom: 1.5rem;
             backdrop-filter: blur(10px);
-            line-height: 1.5;
         }
 
-        .stats-container {
-            display: flex;
+        .stats-grid {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .stat-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.6rem 1rem;
             align-items: center;
-            justify-content: center;
-            gap: 2rem;
         }
 
-        .progress-ring-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .progress-ring {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-        }
-
-        .progress-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-
-        .progress-percentage {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #10b981;
-            display: block;
-            line-height: 1.1;
-            letter-spacing: -0.01em;
-        }
-
-        .progress-label {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.7);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-            margin-top: 0.25rem;
-        }
-
-        .stats-details {
-            text-align: left;
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-number {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: white;
-            line-height: 1.1;
-            letter-spacing: -0.01em;
-        }
-
-        .stat-label {
+        .stat-row-title {
             font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.75);
-            margin-top: 0.5rem;
-            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.78);
+            font-weight: 600;
+        }
+
+        .stat-row-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .stats-progress {
+            grid-column: 1 / -1;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.22);
+            overflow: hidden;
+        }
+
+        .stats-progress-fill {
+            height: 100%;
+            width: 0;
+            border-radius: 999px;
+            transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .stats-subtitle {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.85);
-            font-style: italic;
-            margin-top: 1rem;
-            line-height: 1.5;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.88);
+            margin-top: 0.2rem;
+            line-height: 1.4;
+        }
+
+        .stats-note {
+            grid-column: 1 / -1;
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.68);
+            margin-top: -0.35rem;
+            line-height: 1.3;
         }
 
         .content {
@@ -392,6 +363,10 @@
             h1 {
                 font-size: 1.8rem;
             }
+
+            .stats {
+                padding: 1rem;
+            }
         }
 
         @media (max-width: 768px) {
@@ -418,30 +393,25 @@
         <h1>Countries I've Visited</h1>
 
         <div class="stats">
-            <div class="stats-container">
-                <div class="progress-ring-container">
-                    <svg width="120" height="120" viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="8"/>
-                        <circle id="progressRing" cx="60" cy="60" r="54" fill="none" stroke="#10b981" stroke-width="8" stroke-dasharray="339.29" stroke-dashoffset="339.29" class="progress-ring"/>
-                    </svg>
-                    <div class="progress-text">
-                        <span class="progress-percentage" id="progressPercentage">0%</span>
-                        <span class="progress-label">Complete</span>
+            <div class="stats-grid">
+                <div class="stat-row">
+                    <div class="stat-row-title">Europe Progress</div>
+                    <div class="stat-row-value" id="europeProgressText">0 / 0 (0%)</div>
+                    <div class="stats-progress">
+                        <div class="stats-progress-fill" id="europeProgressBar" style="background: linear-gradient(90deg, #10b981, #34d399);"></div>
                     </div>
                 </div>
-                <div class="stats-details">
-                    <div class="stats-row">
-                        <div class="stat-item">
-                            <span class="stat-number" id="visitedCount">0</span>
-                            <span class="stat-label">Visited</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="notVisitedCount">0</span>
-                            <span class="stat-label">To Visit</span>
-                        </div>
+
+                <div class="stat-row">
+                    <div class="stat-row-title">World Total</div>
+                    <div class="stat-row-value" id="worldProgressText">0 / 195 (0%)</div>
+                    <div class="stats-progress">
+                        <div class="stats-progress-fill" id="worldProgressBar" style="background: linear-gradient(90deg, #60a5fa, #22d3ee);"></div>
                     </div>
-                    <div class="stats-subtitle" id="motivationalText">Keep exploring!</div>
+                    <div class="stats-note">Based on 195 UN member states.</div>
                 </div>
+
+                <div class="stats-subtitle" id="motivationalText">Keep exploring!</div>
             </div>
         </div>
 
@@ -908,6 +878,7 @@
         function updateStats() {
             // Countries to exclude from top-level stats (still shown in regions)
             const excludedFromStats = new Set(['SM', 'VA', 'MC', 'AD', 'LI']);
+            const worldTotalCountries = 195;
             
             const allCountries = new Set();
             Object.values(regions).forEach(regionData => {
@@ -917,31 +888,30 @@
                     }
                 });
             });
-            const totalCountries = allCountries.size;
-            const visitedCount = Array.from(allCountries).filter(c => visitedCountries.includes(c)).length;
-            const notVisitedCount = totalCountries - visitedCount;
-            const percentage = Math.round((visitedCount / totalCountries) * 100);
+            const europeTotalCountries = allCountries.size;
+            const europeVisitedCount = Array.from(allCountries).filter(c => visitedCountries.includes(c)).length;
+            const europePercentage = Math.round((europeVisitedCount / europeTotalCountries) * 100);
+
+            const worldVisitedCount = new Set(visitedCountries).size;
+            const worldPercentage = Math.round((worldVisitedCount / worldTotalCountries) * 100);
             
-            document.getElementById('visitedCount').textContent = visitedCount;
-            document.getElementById('notVisitedCount').textContent = notVisitedCount;
-            document.getElementById('progressPercentage').textContent = percentage + '%';
-            
-            // Update progress ring
-            const circumference = 2 * Math.PI * 54; // radius = 54
-            const offset = circumference - (percentage / 100) * circumference;
-            document.getElementById('progressRing').style.strokeDashoffset = offset;
+            document.getElementById('europeProgressText').textContent = `${europeVisitedCount} / ${europeTotalCountries} (${europePercentage}%)`;
+            document.getElementById('worldProgressText').textContent = `${worldVisitedCount} / ${worldTotalCountries} (${worldPercentage}%)`;
+
+            document.getElementById('europeProgressBar').style.width = `${europePercentage}%`;
+            document.getElementById('worldProgressBar').style.width = `${worldPercentage}%`;
             
             // Update motivational text
             let motivation = 'Keep exploring!';
-            if (percentage === 0) {
+            if (europePercentage === 0) {
                 motivation = 'Start your European adventure!';
-            } else if (percentage < 25) {
+            } else if (europePercentage < 25) {
                 motivation = 'Just getting started!';
-            } else if (percentage < 50) {
+            } else if (europePercentage < 50) {
                 motivation = 'Great progress!';
-            } else if (percentage < 75) {
+            } else if (europePercentage < 75) {
                 motivation = 'Halfway there!';
-            } else if (percentage < 100) {
+            } else if (europePercentage < 100) {
                 motivation = 'Almost there!';
             } else {
                 motivation = '🎉 Europe conquered!';
