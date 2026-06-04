@@ -362,6 +362,25 @@
             font-weight: 600;
         }
 
+        .continent-count {
+            display: inline-block;
+            margin-left: 0.35rem;
+            padding: 0.05rem 0.4rem;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .continent-empty {
+            font-size: 0.76rem;
+            color: #94a3b8;
+            margin-top: 0.15rem;
+            font-style: italic;
+        }
+
         .rest-world-section .country-list {
             gap: 0.4rem;
         }
@@ -976,7 +995,14 @@
                 new Set(visitedCountries.filter(code => !europeanCountries.has(code)))
             );
 
-            const continentOrder = ['North America', 'South America', 'Africa', 'Asia', 'Oceania', 'Other'];
+            const continentOrder = ['Africa', 'Asia', 'North America', 'South America', 'Oceania'];
+            const continentTotals = {
+                'Africa': 54,
+                'Asia': 48,
+                'North America': 23,
+                'South America': 12,
+                'Oceania': 14
+            };
             const continentGroups = continentOrder.reduce((acc, continent) => {
                 acc[continent] = [];
                 return acc;
@@ -993,18 +1019,22 @@
             const restSection = document.createElement('div');
             restSection.className = 'rest-world-section';
 
-            const continentsWithVisits = Object.entries(continentGroups)
-                .filter(([, codes]) => codes.length > 0)
-                .map(([continent, codes]) => {
+            const continentsDisplay = continentOrder
+                .map(continent => {
+                    const codes = continentGroups[continent]
+                        .slice()
+                        .sort((a, b) => (countryNames[a] || a).localeCompare(countryNames[b] || b));
+
                     const tags = codes
-                        .sort((a, b) => (countryNames[a] || a).localeCompare(countryNames[b] || b))
                         .map(code => `<span class="country-tag visited" data-year="Visited"><span class="country-tag-icon">✓</span>${countryFlag(code)} ${countryNames[code] || code}</span>`)
                         .join('');
 
+                    const totalForContinent = continentTotals[continent] || 0;
+
                     return `
                         <div class="continent-group">
-                            <div class="continent-name">${continent}</div>
-                            <div class="country-list">${tags}</div>
+                            <div class="continent-name">${continent}<span class="continent-count">${codes.length}/${totalForContinent}</span></div>
+                            ${tags ? `<div class="country-list">${tags}</div>` : '<div class="continent-empty">No visits yet</div>'}
                         </div>
                     `;
                 })
@@ -1012,7 +1042,7 @@
 
             restSection.innerHTML = `
                 <div class="rest-world-title">🌍 Rest of the World</div>
-                ${continentsWithVisits || '<div class="empty-rest-world">No non-European countries visited yet.</div>'}
+                ${continentsDisplay || '<div class="empty-rest-world">No non-European countries visited yet.</div>'}
             `;
 
             container.appendChild(restSection);
