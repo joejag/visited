@@ -137,15 +137,6 @@
             overflow-y: auto;
         }
 
-        .regions-title {
-            font-size: 1.4rem;
-            margin-bottom: 1.75rem;
-            color: #1f2937;
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            line-height: 1.2;
-        }
-
         .region-item {
             background: #f9fafb;
             border: 2px solid #e5e7eb;
@@ -393,7 +384,6 @@
             </div>
 
             <div class="sidebar">
-                <div class="regions-title">Regions</div>
                 <div id="regionsContainer"></div>
             </div>
         </div>
@@ -873,6 +863,12 @@
             document.getElementById('europeProgressBar').style.width = `${europePercentage}%`;
             document.getElementById('worldProgressBar').style.width = `${worldPercentage}%`;
             
+
+        function countryFlag(code) {
+            return code
+                .toUpperCase()
+                .replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt(0)));
+        }
         }
 
         function renderRegions() {
@@ -899,11 +895,11 @@
                 regionEl.style.borderColor = regionData.color;
                 
                 const visitedTagsHtml = visited
-                    .map(code => `<span class="country-tag visited" data-year="Visited"><span class="country-tag-icon">✓</span>${countryNames[code] || code}</span>`)
+                    .map(code => `<span class="country-tag visited" data-year="Visited"><span class="country-tag-icon">✓</span>${countryFlag(code)} ${countryNames[code] || code}</span>`)
                     .join('');
                 
                 const unvisitedTagsHtml = unvisited
-                    .map(code => `<span class="country-tag"><span class="country-tag-icon">○</span>${countryNames[code] || code}</span>`)
+                    .map(code => `<span class="country-tag"><span class="country-tag-icon">○</span>${countryFlag(code)} ${countryNames[code] || code}</span>`)
                     .join('');
 
                 const allTagsHtml = visitedTagsHtml + unvisitedTagsHtml;
