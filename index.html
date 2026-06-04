@@ -511,7 +511,9 @@
             'GR': 'Greece', 'CY': 'Cyprus', 'RO': 'Romania', 'MD': 'Moldova',
             'UA': 'Ukraine', 'BY': 'Belarus', 'LT': 'Lithuania', 'LV': 'Latvia', 'EE': 'Estonia',
             'TR': 'Turkey', 'HU': 'Hungary', 'AD': 'Andorra', 'MC': 'Monaco', 'LI': 'Liechtenstein',
-            'SM': 'San Marino', 'VA': 'Vatican City', 'MT': 'Malta'
+            'SM': 'San Marino', 'VA': 'Vatican City', 'MT': 'Malta',
+            'US': 'United States', 'MX': 'Mexico', 'BR': 'Brazil', 'AR': 'Argentina',
+            'CL': 'Chile', 'MA': 'Morocco', 'IN': 'India'
         };
 
         // Define European regions with their countries, colors, and emojis
@@ -580,6 +582,18 @@
         const europeanCountries = new Set(
             Object.values(regions).flatMap(r => r.countries)
         );
+
+        // Extra countries for map-only coloring (excluded from European progress totals)
+        const extraVisitedCountries = new Set(['US', 'MX', 'BR', 'AR', 'CL', 'MA', 'IN']);
+        const extraVisitedCountryColors = {
+            'US': '#ef4444',
+            'MX': '#f97316',
+            'BR': '#22c55e',
+            'AR': '#0ea5e9',
+            'CL': '#14b8a6',
+            'MA': '#f59e0b',
+            'IN': '#ec4899'
+        };
 
         // Initialize map centered on Europe
         const map = L.map('map').setView([52.0, 10.0], 4);
@@ -704,7 +718,14 @@
             '470': 'MT',  // Malta
             '316': 'MT',  // Malta (alternative code)
             '196': 'CY',  // Cyprus
-            '705': 'SI'   // Slovenia
+            '705': 'SI',  // Slovenia
+            '840': 'US',  // United States
+            '484': 'MX',  // Mexico
+            '076': 'BR',  // Brazil
+            '032': 'AR',  // Argentina
+            '152': 'CL',  // Chile
+            '504': 'MA',  // Morocco
+            '356': 'IN'   // India
         };
 
         // Load GeoJSON and create map
@@ -724,9 +745,9 @@
                             if (!feature.id) {
                                 return null;
                             }
-                            const id = feature.id.toString();
+                            const id = feature.id.toString().padStart(3, '0');
                             const countryCode = countryNameMap[id];
-                            if (countryCode && europeanCountries.has(countryCode)) {
+                            if (countryCode && (europeanCountries.has(countryCode) || extraVisitedCountries.has(countryCode))) {
                                 return {
                                     ...feature,
                                     properties: {
@@ -769,9 +790,10 @@
                         const code = feature.properties.countryCode;
                         const isVisited = visitedCountries.includes(code);
                         const regionData = regionMap[code];
+                        const extraColor = extraVisitedCountryColors[code];
                         
-                        // Get the region color, or use a default
-                        let color = regionData ? regionData.color : '#9ca3af';
+                        // Region colors take priority, then map-only extra country colors
+                        let color = regionData ? regionData.color : (extraColor || '#9ca3af');
                         let fillColor;
                         let weight;
                         let opacity;
@@ -803,7 +825,8 @@
                         const code = feature.properties.countryCode;
                         const isVisited = visitedCountries.includes(code);
                         const regionData = regionMap[code];
-                        let color = regionData ? regionData.color : '#9ca3af';
+                        const extraColor = extraVisitedCountryColors[code];
+                        let color = regionData ? regionData.color : (extraColor || '#9ca3af');
                         
                         return L.circleMarker(latlng, {
                             radius: isVisited ? 8 : 6,
@@ -836,7 +859,7 @@
                                 this.setStyle({
                                     weight: isVisited ? 2.5 : 1,
                                     fillOpacity: isVisited ? 0.95 : 0.5,
-                                    color: isVisited ? regionMap[code]?.color : '#b0b0b0'
+                                    color: isVisited ? (regionMap[code]?.color || extraVisitedCountryColors[code] || '#9ca3af') : '#b0b0b0'
                                 });
                             }
                             this.bringToFront();
@@ -853,7 +876,7 @@
                                 this.setStyle({
                                     weight: isVisited ? 1.5 : 0.5,
                                     fillOpacity: isVisited ? 0.85 : 0.3,
-                                    color: isVisited ? regionMap[code]?.color : '#d0d0d0'
+                                    color: isVisited ? (regionMap[code]?.color || extraVisitedCountryColors[code] || '#9ca3af') : '#d0d0d0'
                                 });
                             }
                         });
@@ -895,7 +918,7 @@
                 });
             });
             const totalCountries = allCountries.size;
-            const visitedCount = visitedCountries.filter(c => !excludedFromStats.has(c)).length;
+            const visitedCount = Array.from(allCountries).filter(c => visitedCountries.includes(c)).length;
             const notVisitedCount = totalCountries - visitedCount;
             const percentage = Math.round((visitedCount / totalCountries) * 100);
             
