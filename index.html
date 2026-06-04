@@ -937,6 +937,10 @@
             container.innerHTML = '';
 
             Object.entries(regions).forEach(([regionName, regionData]) => {
+                if (regionName === 'Microstates') {
+                    return;
+                }
+
                 const countries = regionData.countries;
                 const visited = countries.filter(c => visitedCountries.includes(c));
                 const unvisited = countries.filter(c => !visitedCountries.includes(c));
