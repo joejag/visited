@@ -900,17 +900,11 @@
         }
 
         function updateStats() {
-            // Countries to exclude from top-level stats (still shown in regions)
-            const excludedFromStats = new Set(['SM', 'VA', 'MC', 'AD', 'LI']);
             const worldTotalCountries = 195;
             
             const allCountries = new Set();
             Object.values(regions).forEach(regionData => {
-                regionData.countries.forEach(c => {
-                    if (!excludedFromStats.has(c)) {
-                        allCountries.add(c);
-                    }
-                });
+                regionData.countries.forEach(c => allCountries.add(c));
             });
             const europeTotalCountries = allCountries.size;
             const europeVisitedCount = Array.from(allCountries).filter(c => visitedCountries.includes(c)).length;
@@ -937,10 +931,6 @@
             container.innerHTML = '';
 
             Object.entries(regions).forEach(([regionName, regionData]) => {
-                if (regionName === 'Microstates') {
-                    return;
-                }
-
                 const countries = regionData.countries;
                 const visited = countries.filter(c => visitedCountries.includes(c));
                 const unvisited = countries.filter(c => !visitedCountries.includes(c));
