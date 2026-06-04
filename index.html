@@ -91,13 +91,6 @@
             transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        .stats-subtitle {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.88);
-            margin-top: 0.2rem;
-            line-height: 1.4;
-        }
-
         .stats-note {
             grid-column: 1 / -1;
             font-size: 0.72rem;
@@ -411,7 +404,6 @@
                     <div class="stats-note">Based on 195 UN member states.</div>
                 </div>
 
-                <div class="stats-subtitle" id="motivationalText">Keep exploring!</div>
             </div>
         </div>
 
@@ -901,22 +893,6 @@
             document.getElementById('europeProgressBar').style.width = `${europePercentage}%`;
             document.getElementById('worldProgressBar').style.width = `${worldPercentage}%`;
             
-            // Update motivational text
-            let motivation = 'Keep exploring!';
-            if (europePercentage === 0) {
-                motivation = 'Start your European adventure!';
-            } else if (europePercentage < 25) {
-                motivation = 'Just getting started!';
-            } else if (europePercentage < 50) {
-                motivation = 'Great progress!';
-            } else if (europePercentage < 75) {
-                motivation = 'Halfway there!';
-            } else if (europePercentage < 100) {
-                motivation = 'Almost there!';
-            } else {
-                motivation = '🎉 Europe conquered!';
-            }
-            document.getElementById('motivationalText').textContent = motivation;
         }
 
         function renderRegions() {
