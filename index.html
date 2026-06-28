@@ -834,12 +834,17 @@
                 emoji: '🌽'
             },
             'South': {
-                states: ['DE', 'FL', 'GA', 'MD', 'NC', 'SC', 'VA', 'DC', 'WV', 'AL', 'KY', 'MS', 'TN', 'AR', 'LA', 'OK', 'TX'],
+                states: ['DE', 'FL', 'GA', 'MD', 'NC', 'SC', 'VA', 'WV', 'AL', 'KY', 'MS', 'TN', 'AR', 'LA', 'OK', 'TX'],
                 color: '#3b82f6',
                 emoji: '🌤️'
             },
+            'Fresk States': {
+                states: ['AK', 'HI'],
+                color: '#93c5fd',
+                emoji: '🌊'
+            },
             'West': {
-                states: ['AZ', 'CO', 'ID', 'MT', 'NV', 'NM', 'UT', 'WY', 'AK', 'CA', 'HI', 'OR', 'WA'],
+                states: ['AZ', 'CO', 'ID', 'MT', 'NV', 'NM', 'UT', 'WY', 'CA', 'OR', 'WA'],
                 color: '#60a5fa',
                 emoji: '🏔️'
             }
@@ -1213,7 +1218,7 @@
 
                 usSection.innerHTML = `
                     <div class="us-states-title">🗽 United States</div>
-                    <div class="us-states-meta">${visitedUSStates.length} state${visitedUSStates.length === 1 ? '' : 's'} visited</div>
+                    <div class="us-states-meta">${visitedUSStates.filter(code => code !== 'DC').length} state${visitedUSStates.filter(code => code !== 'DC').length === 1 ? '' : 's'} visited</div>
                     ${regionsDisplay}
                 `;
 
