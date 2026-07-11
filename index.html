@@ -1226,7 +1226,7 @@
             }
 
             const nonEuropeanVisited = Array.from(
-                new Set(visitedCountries.filter(code => !europeanCountries.has(code) && code !== 'US'))
+                new Set(visitedCountries.filter(code => !europeanCountries.has(code)))
             );
 
             const continentOrder = ['Africa', 'Asia', 'North America', 'South America', 'Oceania'];
