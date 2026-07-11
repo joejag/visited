@@ -396,6 +396,47 @@
             padding-bottom: 0.6rem;
         }
 
+        .us-states-section {
+            margin-top: 0.25rem;
+            margin-bottom: 0.9rem;
+            padding: 0.9rem 0.95rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.98));
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .us-states-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.7rem;
+        }
+
+        .us-states-meta {
+            font-size: 0.76rem;
+            color: #64748b;
+            margin-bottom: 0.65rem;
+        }
+
+        .us-region-group {
+            margin-bottom: 0.6rem;
+            padding-left: 0.55rem;
+            border-left: 2px solid #dbeafe;
+        }
+
+        .us-region-name {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #475569;
+            margin-bottom: 0.35rem;
+            font-weight: 700;
+        }
+
         @media (max-width: 1024px) {
             .content {
                 grid-template-columns: 1fr;
@@ -620,6 +661,7 @@
         let visitedCountries = [];
         let visitedUSStates = [];
         let geoJsonLayer = null;
+        let usStatesLayer = null;
 
         // Helper function to lighten a color
         function lightenColor(color, opacity) {
@@ -673,9 +715,9 @@
         // Load visited countries from JSON
         async function loadVisited() {
             try {
-                const response = await fetch('visited.json');
-                if (response.ok) {
-                    visitedCountries = await response.json();
+                const countryResponse = await fetch('visited.json');
+                if (countryResponse.ok) {
+                    visitedCountries = await countryResponse.json();
                 }
             } catch (error) {
                 console.log('No visited.json found, starting fresh.');
@@ -683,21 +725,16 @@
             }
 
             try {
-                const statesResponse = await fetch('visited-us-states.json');
-                if (statesResponse.ok) {
-                    const loadedStates = await statesResponse.json();
-                    if (Array.isArray(loadedStates)) {
-                        visitedUSStates = loadedStates;
-                    }
+                const stateResponse = await fetch('visited-us-states.json');
+                if (stateResponse.ok) {
+                    const states = await stateResponse.json();
+                    visitedUSStates = Array.from(new Set(states.map(code => code.toUpperCase())));
                 }
             } catch (error) {
+                console.log('No visited-us-states.json found, starting with no visited US states.');
                 visitedUSStates = [];
             }
 
-            // If US states are tracked separately, ensure US appears as visited in country-level views.
-            if (visitedUSStates.length > 0 && !visitedCountries.includes('US')) {
-                visitedCountries.push('US');
-            }
             loadMap();
         }
 
@@ -759,11 +796,76 @@
             '356': 'IN'   // India
         };
 
+        const usStateNames = {
+            'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+            'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+            'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+            'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+            'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+            'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+            'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+            'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+            'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+            'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+            'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+            'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+            'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+        };
+
+        const usStateFipsToCode = {
+            '01': 'AL', '02': 'AK', '04': 'AZ', '05': 'AR', '06': 'CA', '08': 'CO', '09': 'CT', '10': 'DE',
+            '11': 'DC', '12': 'FL', '13': 'GA', '15': 'HI', '16': 'ID', '17': 'IL', '18': 'IN', '19': 'IA',
+            '20': 'KS', '21': 'KY', '22': 'LA', '23': 'ME', '24': 'MD', '25': 'MA', '26': 'MI', '27': 'MN',
+            '28': 'MS', '29': 'MO', '30': 'MT', '31': 'NE', '32': 'NV', '33': 'NH', '34': 'NJ', '35': 'NM',
+            '36': 'NY', '37': 'NC', '38': 'ND', '39': 'OH', '40': 'OK', '41': 'OR', '42': 'PA', '44': 'RI',
+            '45': 'SC', '46': 'SD', '47': 'TN', '48': 'TX', '49': 'UT', '50': 'VT', '51': 'VA', '53': 'WA',
+            '54': 'WV', '55': 'WI', '56': 'WY'
+        };
+
+        const usRegions = {
+            'Northeast': {
+                states: ['CT', 'ME', 'MA', 'NH', 'RI', 'VT', 'NJ', 'NY', 'PA'],
+                color: '#1d4ed8',
+                emoji: '🗽'
+            },
+            'Midwest': {
+                states: ['IL', 'IN', 'MI', 'OH', 'WI', 'IA', 'KS', 'MN', 'MO', 'NE', 'ND', 'SD'],
+                color: '#2563eb',
+                emoji: '🌽'
+            },
+            'South': {
+                states: ['DE', 'FL', 'GA', 'MD', 'NC', 'SC', 'VA', 'WV', 'AL', 'KY', 'MS', 'TN', 'AR', 'LA', 'OK', 'TX'],
+                color: '#3b82f6',
+                emoji: '🌤️'
+            },
+            'Fresk States': {
+                states: ['AK', 'HI'],
+                color: '#93c5fd',
+                emoji: '🌊'
+            },
+            'West': {
+                states: ['AZ', 'CO', 'ID', 'MT', 'NV', 'NM', 'UT', 'WY', 'CA', 'OR', 'WA'],
+                color: '#60a5fa',
+                emoji: '🏔️'
+            }
+        };
+
+        const usRegionMap = {};
+        Object.entries(usRegions).forEach(([regionName, data]) => {
+            data.states.forEach(state => {
+                usRegionMap[state] = { name: regionName, color: data.color };
+            });
+        });
+
         // Load GeoJSON and create map
         async function loadMap() {
             try {
-                const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
-                const world = await response.json();
+                const [worldResponse, usStatesResponse] = await Promise.all([
+                    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'),
+                    fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+                ]);
+                const world = await worldResponse.json();
+                const usStatesTopo = await usStatesResponse.json();
                 
                 // Convert TopoJSON to GeoJSON
                 const countriesGeoJson = topojson.feature(world, world.objects.countries);
@@ -819,9 +921,22 @@
                         }
                         
                         const code = feature.properties.countryCode;
-                        const isVisited = visitedCountries.includes(code);
+                        const isVisited = code !== 'US' && visitedCountries.includes(code);
                         const regionData = regionMap[code];
                         const extraColor = extraVisitedCountryColors[code];
+
+                        if (code === 'US') {
+                            return {
+                                fillColor: '#f8fafc',
+                                weight: 0.8,
+                                opacity: 0.9,
+                                color: '#94a3b8',
+                                fillOpacity: 0.45,
+                                interactive: false,
+                                lineCap: 'round',
+                                lineJoin: 'round'
+                            };
+                        }
                         
                         // Region colors take priority, then map-only extra country colors
                         let color = regionData ? regionData.color : (extraColor || '#9ca3af');
@@ -854,7 +969,7 @@
                     pointToLayer: (feature, latlng) => {
                         // Handle Malta point marker
                         const code = feature.properties.countryCode;
-                        const isVisited = visitedCountries.includes(code);
+                        const isVisited = code !== 'US' && visitedCountries.includes(code);
                         const regionData = regionMap[code];
                         const extraColor = extraVisitedCountryColors[code];
                         let color = regionData ? regionData.color : (extraColor || '#9ca3af');
@@ -874,10 +989,13 @@
                             console.log('Feature with no country code:', feature.id);
                             return;
                         }
+                        if (code === 'US') {
+                            return;
+                        }
                         const name = countryNames[code] || code;
                         layer.bindPopup(`<strong>${name}</strong> (${code})`);
                         
-                        const isVisited = visitedCountries.includes(code);
+                        const isVisited = code !== 'US' && visitedCountries.includes(code);
                         
                         layer.on('mouseover', function() {
                             if (feature.geometry.type === 'Point') {
@@ -929,6 +1047,63 @@
                     }
                 }).addTo(map);
 
+                const usStatesGeoJson = topojson.feature(usStatesTopo, usStatesTopo.objects.states);
+
+                if (usStatesLayer) {
+                    map.removeLayer(usStatesLayer);
+                }
+
+                usStatesLayer = L.geoJSON(usStatesGeoJson, {
+                    style: (feature) => {
+                        const fips = feature.id.toString().padStart(2, '0');
+                        const stateCode = usStateFipsToCode[fips];
+                        const isVisited = stateCode ? visitedUSStates.includes(stateCode) : false;
+                        const regionData = stateCode ? usRegionMap[stateCode] : null;
+                        const regionColor = regionData ? regionData.color : '#3b82f6';
+
+                        return {
+                            fillColor: isVisited ? regionColor : '#f8fafc',
+                            color: isVisited ? regionColor : '#94a3b8',
+                            weight: isVisited ? 1.2 : 0.8,
+                            opacity: 1,
+                            fillOpacity: isVisited ? 0.78 : 0.15,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        };
+                    },
+                    onEachFeature: (feature, layer) => {
+                        const fips = feature.id.toString().padStart(2, '0');
+                        const stateCode = usStateFipsToCode[fips];
+                        const stateName = stateCode ? (usStateNames[stateCode] || stateCode) : 'Unknown';
+                        const isVisited = stateCode ? visitedUSStates.includes(stateCode) : false;
+                        const regionName = stateCode ? (usRegionMap[stateCode]?.name || 'Other') : 'Other';
+
+                        layer.bindPopup(`<strong>${stateName}</strong>${stateCode ? ` (${stateCode})` : ''}<br>${regionName}<br>${isVisited ? 'Visited' : 'Not visited'}`);
+                        layer.bindTooltip(stateName, {
+                            direction: 'top',
+                            sticky: true,
+                            opacity: 0.9
+                        });
+
+                        layer.on('mouseover', function() {
+                            this.setStyle({
+                                weight: isVisited ? 1.8 : 1.2,
+                                fillOpacity: isVisited ? 0.92 : 0.3
+                            });
+                            this.openTooltip();
+                            this.bringToFront();
+                        });
+
+                        layer.on('mouseout', function() {
+                            this.setStyle({
+                                weight: isVisited ? 1.2 : 0.8,
+                                fillOpacity: isVisited ? 0.78 : 0.15
+                            });
+                            this.closeTooltip();
+                        });
+                    }
+                }).addTo(map);
+
                 updateStats();
                 renderRegions();
             } catch (error) {
@@ -947,7 +1122,11 @@
             const europeVisitedCount = Array.from(allCountries).filter(c => visitedCountries.includes(c)).length;
             const europePercentage = Math.round((europeVisitedCount / europeTotalCountries) * 100);
 
-            const worldVisitedCount = new Set(visitedCountries).size;
+            const worldVisitedCountries = new Set(visitedCountries.filter(code => code !== 'US'));
+            if (visitedCountries.includes('US') || visitedUSStates.length > 0) {
+                worldVisitedCountries.add('US');
+            }
+            const worldVisitedCount = worldVisitedCountries.size;
             const worldPercentage = Math.round((worldVisitedCount / worldTotalCountries) * 100);
             
             document.getElementById('europeProgressText').textContent = `${europeVisitedCount} / ${europeTotalCountries} (${europePercentage}%)`;
@@ -1009,8 +1188,45 @@
                 }, 10);
             });
 
+            if (visitedUSStates.length > 0) {
+                const usSection = document.createElement('div');
+                usSection.className = 'us-states-section';
+
+                const regionsDisplay = Object.entries(usRegions)
+                    .map(([regionName, regionData]) => {
+                        const visitedInRegion = regionData.states
+                            .filter(code => visitedUSStates.includes(code))
+                            .sort((a, b) => (usStateNames[a] || a).localeCompare(usStateNames[b] || b));
+
+                        if (visitedInRegion.length === 0) {
+                            return '';
+                        }
+
+                        const stateTags = visitedInRegion
+                            .map(code => `<span class="country-tag visited" data-year="Visited" style="border-color: ${regionData.color}; background: ${lightenColor(regionData.color, 0.2)}; color: #1e3a8a;"><span class="country-tag-icon">✓</span>🇺🇸 ${usStateNames[code] || code}</span>`)
+                            .join('');
+
+                        return `
+                            <div class="us-region-group" style="border-left-color: ${regionData.color};">
+                                <div class="us-region-name" style="color: ${regionData.color};">${regionData.emoji} ${regionName} (${visitedInRegion.length}/${regionData.states.length})</div>
+                                <div class="country-list">${stateTags}</div>
+                            </div>
+                        `;
+                    })
+                    .filter(Boolean)
+                    .join('');
+
+                usSection.innerHTML = `
+                    <div class="us-states-title">🗽 United States</div>
+                    <div class="us-states-meta">${visitedUSStates.filter(code => code !== 'DC').length} state${visitedUSStates.filter(code => code !== 'DC').length === 1 ? '' : 's'} visited</div>
+                    ${regionsDisplay}
+                `;
+
+                container.appendChild(usSection);
+            }
+
             const nonEuropeanVisited = Array.from(
-                new Set(visitedCountries.filter(code => !europeanCountries.has(code)))
+                new Set(visitedCountries.filter(code => !europeanCountries.has(code) && code !== 'US'))
             );
 
             const continentOrder = ['Africa', 'Asia', 'North America', 'South America', 'Oceania'];
